@@ -22,7 +22,7 @@
 
     <!-- Header -->
     <header class="mb-6 text-center">
-        <h1 class="text-2xl font-bold text-gray-800">Harold Jeremy Marapao</h1>
+        <h1 class="text-2xl font-bold text-gray-800">Cashout Kita</h1>
         <p class="text-sm text-green-600 font-semibold">100% FREE</p>
         <p class="text-xs text-gray-500">Simple cash-out transaction recorder · Offline-ready · No account</p>
     </header>
@@ -163,6 +163,8 @@
         // --- State Management ---
         let transactions = JSON.parse(localStorage.getItem('ck_transactions')) || [];
         let feePerBracket = parseInt(localStorage.getItem('ck_feePerBracket')) || 5;
+        const GITHUB_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/cashout-kita/main/app.html';
+        const CACHE_KEY = 'ck_app_cache_v3';
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -320,27 +322,23 @@
             document.getElementById('repFee').textContent = '₱' + totalFee.toLocaleString('en-PH', {minimumFractionDigits: 2});
         }
 
-        // --- Data Management (Fixed for Android 16) ---
+        // --- Data Management ---
         function exportBackup() {
             const dataStr = JSON.stringify(transactions, null, 2);
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `cashout-kita-backup-${dateStr}.json`;
             
-            // Create Blob (works on Android 16)
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
-            // Create download link
             const a = document.createElement('a');
             a.href = url;
             a.download = fileName;
             a.style.display = 'none';
             document.body.appendChild(a);
             
-            // Trigger download
             a.click();
             
-            // Cleanup
             setTimeout(() => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
@@ -376,23 +374,35 @@
             input.value = '';
         }
 
-        // --- OTA Update (Fixed) ---
-        function checkForUpdate() {
+        // --- OTA Update (FIXED) ---
+        async function checkForUpdate() {
             showToast("Checking for update...");
             
-            // Clear the cache
-            localStorage.removeItem('ck_app_cache_v3');
-            
-            // Force reload the parent window (loader)
-            setTimeout(() => {
-                if (window.top !== window.self) {
-                    // We're in an iframe, reload parent
-                    window.top.location.reload();
-                } else {
-                    // We're not in iframe, just reload
-                    window.location.reload();
+            try {
+                // Fetch fresh copy from GitHub
+                const response = await fetch(GITHUB_URL + '?t=' + Date.now(), { cache: 'no-store' });
+                
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
                 }
-            }, 500);
+                
+                const newHtml = await response.text();
+                
+                // Save to cache
+                localStorage.setItem(CACHE_KEY, newHtml);
+                
+                // Replace current page with new content
+                document.open();
+                document.write(newHtml);
+                document.close();
+                
+                showToast("✅ Updated successfully!");
+            } catch (error) {
+                console.error('Update error:', error);
+                // Clear cache and reload to force fresh load
+                localStorage.removeItem(CACHE_KEY);
+                showToast("❌ Update failed. Check your internet connection.");
+            }
         }
 
         // --- Utility: Toast Notification ---
