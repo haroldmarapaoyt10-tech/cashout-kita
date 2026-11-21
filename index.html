@@ -73,7 +73,7 @@
                 <input type="date" id="transDate" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div class="bg-blue-50 p-3 rounded-md border border-blue-100">
-                <p class="text-sm font-medium text-blue-800">Calculated service fee (1% rounded up to ₱5):</p>
+                <p class="text-sm font-medium text-blue-800">Calculated service fee (<span id="feePercentLabel">1</span>% rounded up to ₱5):</p>
                 <p class="text-2xl font-bold text-blue-700 mt-1" id="calculatedFee">₱0.00</p>
             </div>
             <div class="flex gap-2 pt-2">
@@ -81,6 +81,19 @@
                 <button type="button" id="clearBtn" class="bg-gray-200 text-gray-700 font-bold py-2.5 px-4 rounded-md active:scale-95">Clear</button>
             </div>
         </form>
+    </div>
+
+    <!-- Fee Settings -->
+    <div class="card p-4 mb-6">
+        <h2 class="font-bold text-lg mb-3 border-b pb-2">Fee Settings</h2>
+        <div class="flex gap-2 items-end">
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700">Fee Percentage (%)</label>
+                <input type="number" id="feePercentage" value="1" min="0.1" step="0.1" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 outline-none">
+            </div>
+            <button id="saveFeeBtn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md active:scale-95">Save</button>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Default is 1%. The computed fee will be rounded up to the nearest ₱5.</p>
     </div>
 
     <!-- Reports -->
@@ -145,9 +158,12 @@
 
     <script>
         let transactions = JSON.parse(localStorage.getItem('ck_transactions')) || [];
+        let feePercentage = parseFloat(localStorage.getItem('ck_feePercentage')) || 1;
         let isDuplicate = false;
 
         document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('feePercentage').value = feePercentage;
+            document.getElementById('feePercentLabel').textContent = feePercentage;
             document.getElementById('transDate').valueAsDate = new Date();
             
             document.getElementById('amount').addEventListener('input', calculateFee);
@@ -190,11 +206,9 @@
                     return;
                 }
 
-                // Show loading overlay
                 const overlay = document.getElementById('loadingOverlay');
                 overlay.classList.remove('hidden');
 
-                // Simulate processing delay
                 setTimeout(() => {
                     const refNum = refNumInput.value.trim();
                     const amount = parseFloat(document.getElementById('amount').value);
@@ -206,18 +220,27 @@
                     });
                     
                     localStorage.setItem('ck_transactions', JSON.stringify(transactions));
-                    
-                    // Hide loading overlay
                     overlay.classList.add('hidden');
                     
                     showToast("✅ Successfully recorded!");
                     clearForm();
                     document.getElementById('amount').focus();
                     renderAll();
-                }, 800); // 800ms delay para makita ang spinner
+                }, 800);
             });
             
             document.getElementById('clearBtn').addEventListener('click', clearForm);
+            
+            document.getElementById('saveFeeBtn').addEventListener('click', () => {
+                const newFee = parseFloat(document.getElementById('feePercentage').value);
+                if (newFee > 0) {
+                    feePercentage = newFee;
+                    localStorage.setItem('ck_feePercentage', feePercentage);
+                    document.getElementById('feePercentLabel').textContent = feePercentage;
+                    calculateFee();
+                    showToast("✅ Fee setting saved!");
+                }
+            });
             
             document.getElementById('exportBtn').addEventListener('click', exportBackup);
             
@@ -231,11 +254,10 @@
             renderAll();
         });
 
-        // NEW FEE LOGIC: 1% rounded up to nearest 5
+        // FEE LOGIC: Percentage rounded up to nearest 5
         function calculateFee() {
             const amount = parseFloat(document.getElementById('amount').value) || 0;
-            const rawFee = amount * 0.01;
-            // Round up to the nearest 5
+            const rawFee = amount * (feePercentage / 100);
             const fee = Math.ceil(rawFee / 5) * 5;
             document.getElementById('calculatedFee').textContent = '₱' + fee.toLocaleString('en-PH', {minimumFractionDigits: 2});
             return fee;
@@ -246,7 +268,6 @@
             document.getElementById('transDate').valueAsDate = new Date();
             document.getElementById('calculatedFee').textContent = '₱0.00';
             
-            // Reset duplicate checker
             document.getElementById('refNum').classList.remove('input-error');
             document.getElementById('refNumError').classList.add('hidden');
             document.getElementById('saveBtn').disabled = false;
