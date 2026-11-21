@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cashout Kita — Free Cash-out Recorder</title>
+    <title>Cashout Kita</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; }
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         .card { background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         #toast {
             visibility: hidden; min-width: 280px; background-color: #10b981; color: #fff;
@@ -20,17 +20,16 @@
 </head>
 <body class="p-4 pb-20">
 
-    <!-- Header -->
     <header class="mb-6 text-center">
         <h1 class="text-2xl font-bold text-gray-800">Cashout Kita</h1>
-        <p class="text-sm text-green-600 font-semibold">100% FREE</p>
-        <p class="text-xs text-gray-500">Simple cash-out transaction recorder · Offline-ready · No account</p>
+        <p class="text-sm text-green-600 font-semibold">100% FREE · Web Version</p>
+        <p class="text-xs text-gray-500">Simple cash-out transaction recorder</p>
     </header>
 
     <!-- Dashboard -->
     <div class="grid grid-cols-2 gap-3 mb-6">
         <div class="card p-3 text-center">
-            <p class="text-xs text-gray-500">Today's Transactions</p>
+            <p class="text-xs text-gray-500">Today's Txns</p>
             <p class="text-xl font-bold text-blue-600" id="dashTodayCount">0</p>
         </div>
         <div class="card p-3 text-center">
@@ -42,7 +41,7 @@
             <p class="text-xl font-bold text-orange-600" id="dashTodayFee">₱0.00</p>
         </div>
         <div class="card p-3 text-center">
-            <p class="text-xs text-gray-500">All-time Transactions</p>
+            <p class="text-xs text-gray-500">All-time Txns</p>
             <p class="text-xl font-bold text-gray-800" id="dashAllTimeCount">0</p>
         </div>
     </div>
@@ -53,25 +52,24 @@
         <form id="transactionForm" class="space-y-3">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Reference number *</label>
-                <input type="text" id="refNum" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                <input type="text" id="refNum" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Cash-out amount (₱) *</label>
-                <input type="number" id="amount" required max="100000" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                <p class="text-xs text-gray-500 mt-1">Maximum amount: ₱100,000 per transaction</p>
+                <input type="number" id="amount" required max="100000" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Transaction date *</label>
-                <input type="date" id="transDate" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                <input type="date" id="transDate" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div class="bg-blue-50 p-3 rounded-md border border-blue-100">
                 <p class="text-sm font-medium text-blue-800">Calculated service fee:</p>
-                <p class="text-xs text-blue-600">₱<span id="feePerBracketDisplay">5</span> per ₱500 bracket (rounded up)</p>
+                <p class="text-xs text-blue-600">₱<span id="feePerBracketDisplay">5</span> per ₱500 bracket</p>
                 <p class="text-2xl font-bold text-blue-700 mt-1" id="calculatedFee">₱0.00</p>
             </div>
             <div class="flex gap-2 pt-2">
-                <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-2.5 px-4 rounded-md hover:bg-blue-700 transition active:scale-95">Save Transaction</button>
-                <button type="button" onclick="clearForm()" class="bg-gray-200 text-gray-700 font-bold py-2.5 px-4 rounded-md hover:bg-gray-300 transition active:scale-95">Clear</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-2.5 px-4 rounded-md active:scale-95">Save</button>
+                <button type="button" id="clearBtn" class="bg-gray-200 text-gray-700 font-bold py-2.5 px-4 rounded-md active:scale-95">Clear</button>
             </div>
         </form>
     </div>
@@ -82,41 +80,40 @@
         <div class="flex gap-2 items-end">
             <div class="flex-1">
                 <label class="block text-sm font-medium text-gray-700">Fee per ₱500 bracket (₱)</label>
-                <input type="number" id="feeSetting" value="5" min="1" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-green-500 outline-none">
+                <input type="number" id="feeSetting" value="5" min="1" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 outline-none">
             </div>
-            <button onclick="saveFeeSetting()" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition mb-0.5 active:scale-95">Save</button>
+            <button id="saveFeeBtn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md active:scale-95">Save</button>
         </div>
-        <p class="text-xs text-gray-500 mt-2">Default: ₱1–₱500 = ₱5, ₱501–₱1,000 = ₱10, etc. New transactions use current setting; old records keep original fees.</p>
     </div>
 
     <!-- Reports -->
     <div class="card p-4 mb-6">
         <h2 class="font-bold text-lg mb-3 border-b pb-2">Reports</h2>
         <div class="flex gap-2 mb-3 flex-wrap">
-            <button onclick="setReportPeriod('today')" class="text-xs bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200 transition">Today</button>
-            <button onclick="setReportPeriod('month')" class="text-xs bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200 transition">This Month</button>
-            <button onclick="setReportPeriod('custom')" class="text-xs bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200 transition">Custom</button>
+            <button onclick="setReportPeriod('today')" class="text-xs bg-gray-100 px-3 py-1.5 rounded-full">Today</button>
+            <button onclick="setReportPeriod('month')" class="text-xs bg-gray-100 px-3 py-1.5 rounded-full">This Month</button>
+            <button onclick="setReportPeriod('custom')" class="text-xs bg-gray-100 px-3 py-1.5 rounded-full">Custom</button>
         </div>
         <div id="customDateRange" class="hidden flex gap-2 mb-3">
-            <input type="date" id="reportFrom" class="border rounded p-1.5 text-sm flex-1 outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="date" id="reportTo" class="border rounded p-1.5 text-sm flex-1 outline-none focus:ring-2 focus:ring-blue-500">
-            <button onclick="generateReport()" class="bg-blue-600 text-white text-xs px-4 rounded hover:bg-blue-700 transition">Go</button>
+            <input type="date" id="reportFrom" class="border rounded p-1.5 text-sm flex-1 outline-none">
+            <input type="date" id="reportTo" class="border rounded p-1.5 text-sm flex-1 outline-none">
+            <button onclick="generateReport()" class="bg-blue-600 text-white text-xs px-4 rounded">Go</button>
         </div>
         <div class="grid grid-cols-3 gap-2 text-center">
-            <div class="bg-gray-50 p-2 rounded border border-gray-100"><p class="text-xs text-gray-500">Transactions</p><p class="font-bold" id="repCount">0</p></div>
-            <div class="bg-gray-50 p-2 rounded border border-gray-100"><p class="text-xs text-gray-500">Total Cash-out</p><p class="font-bold text-green-600" id="repAmount">₱0.00</p></div>
-            <div class="bg-gray-50 p-2 rounded border border-gray-100"><p class="text-xs text-gray-500">Total Fees</p><p class="font-bold text-orange-600" id="repFee">₱0.00</p></div>
+            <div class="bg-gray-50 p-2 rounded border"><p class="text-xs text-gray-500">Txns</p><p class="font-bold" id="repCount">0</p></div>
+            <div class="bg-gray-50 p-2 rounded border"><p class="text-xs text-gray-500">Cash-out</p><p class="font-bold text-green-600" id="repAmount">₱0.00</p></div>
+            <div class="bg-gray-50 p-2 rounded border"><p class="text-xs text-gray-500">Fees</p><p class="font-bold text-orange-600" id="repFee">₱0.00</p></div>
         </div>
     </div>
 
-    <!-- Transaction History -->
+    <!-- History -->
     <div class="card p-4 mb-6">
         <h2 class="font-bold text-lg mb-3 border-b pb-2">Transaction History</h2>
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm text-left">
                 <thead class="bg-gray-50 text-gray-600">
                     <tr>
-                        <th class="p-2">Date & Time</th>
+                        <th class="p-2">Date</th>
                         <th class="p-2">Ref No.</th>
                         <th class="p-2">Cash-out</th>
                         <th class="p-2">Fee</th>
@@ -134,50 +131,78 @@
     <div class="card p-4 mb-6">
         <h2 class="font-bold text-lg mb-3 border-b pb-2">Data Management</h2>
         <div class="grid grid-cols-1 gap-3">
-            <button onclick="exportBackup()" class="w-full bg-indigo-600 text-white font-bold py-2.5 px-4 rounded-md hover:bg-indigo-700 transition active:scale-95">Export Backup (JSON)</button>
-            <label class="w-full bg-gray-600 text-white font-bold py-2.5 px-4 rounded-md hover:bg-gray-700 transition text-center cursor-pointer active:scale-95">
+            <button id="exportBtn" class="w-full bg-indigo-600 text-white font-bold py-2.5 px-4 rounded-md active:scale-95">Export Backup (JSON)</button>
+            <label class="w-full bg-gray-600 text-white font-bold py-2.5 px-4 rounded-md text-center cursor-pointer active:scale-95">
                 Restore Backup
-                <input type="file" id="restoreFile" accept=".json" class="hidden" onchange="restoreBackup(this)">
+                <input type="file" id="restoreFile" accept=".json" class="hidden">
             </label>
+            <button id="clearAllBtn" class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-md active:scale-95">Clear All Records</button>
         </div>
-        <p class="text-xs text-gray-500 mt-3">Your records are saved on this device/browser. Export a backup regularly.</p>
-    </div>
-
-    <!-- OTA Update Button -->
-    <div class="text-center py-4 border-t border-gray-200 mt-4">
-        <button onclick="checkForUpdate()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-md active:scale-95 flex items-center justify-center gap-2 mx-auto">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            OTA Update
-        </button>
-        <p class="text-xs text-gray-400 mt-2">Clears cache and reloads the latest version from server.</p>
+        <p class="text-xs text-gray-500 mt-3">Data is saved in your browser. Export regularly.</p>
     </div>
 
     <footer class="text-center text-xs text-gray-400 pb-8">
-        Cashout Kita · Free personal/business recordkeeping tool · Works offline · Data stays in this browser
+        Cashout Kita · Free · Works on any device
     </footer>
 
-    <!-- Toast Notification Element -->
-    <div id="toast">Successfully recorded and claimed!</div>
+    <div id="toast">Success!</div>
 
     <script>
-        // --- State Management ---
         let transactions = JSON.parse(localStorage.getItem('ck_transactions')) || [];
         let feePerBracket = parseInt(localStorage.getItem('ck_feePerBracket')) || 5;
-        
-        // ⚠️ PALITAN MO ITO NG TUNAY MONG RAW GITHUB URL
-        const GITHUB_URL = 'https://raw.githubusercontent.com/haroldmarapaoyt10-tech/cashout-kita/refs/heads/main/app.html';
-        const CACHE_KEY = 'ck_app_cache_v3';
 
-        // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('feeSetting').value = feePerBracket;
             document.getElementById('feePerBracketDisplay').textContent = feePerBracket;
             document.getElementById('transDate').valueAsDate = new Date();
+            
             document.getElementById('amount').addEventListener('input', calculateFee);
+            
+            document.getElementById('transactionForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const refNum = document.getElementById('refNum').value.trim();
+                const amount = parseFloat(document.getElementById('amount').value);
+                const date = document.getElementById('transDate').value;
+                const fee = calculateFee();
+
+                transactions.unshift({
+                    id: Date.now(), refNum, amount, fee, date, timestamp: new Date().toISOString()
+                });
+                
+                localStorage.setItem('ck_transactions', JSON.stringify(transactions));
+                showToast("✅ Successfully recorded and claimed!");
+                clearForm();
+                document.getElementById('amount').focus();
+                renderAll();
+            });
+            
+            document.getElementById('clearBtn').addEventListener('click', clearForm);
+            
+            document.getElementById('saveFeeBtn').addEventListener('click', () => {
+                const newFee = parseInt(document.getElementById('feeSetting').value);
+                if (newFee > 0) {
+                    feePerBracket = newFee;
+                    localStorage.setItem('ck_feePerBracket', feePerBracket);
+                    document.getElementById('feePerBracketDisplay').textContent = feePerBracket;
+                    calculateFee();
+                    showToast("✅ Fee setting saved!");
+                }
+            });
+            
+            document.getElementById('exportBtn').addEventListener('click', exportBackup);
+            
+            document.getElementById('restoreFile').addEventListener('change', (e) => {
+                if (e.target.files[0]) {
+                    restoreBackup(e.target.files[0]);
+                    e.target.value = '';
+                }
+            });
+
+            document.getElementById('clearAllBtn').addEventListener('click', clearAllRecords);
+            
             renderAll();
         });
 
-        // --- Core Logic ---
         function calculateFee() {
             const amount = parseFloat(document.getElementById('amount').value) || 0;
             const brackets = Math.ceil(amount / 500);
@@ -186,52 +211,10 @@
             return fee;
         }
 
-        document.getElementById('transactionForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const refNum = document.getElementById('refNum').value.trim();
-            const amount = parseFloat(document.getElementById('amount').value);
-            const date = document.getElementById('transDate').value;
-            const fee = calculateFee();
-
-            if (amount > 100000) {
-                alert("Maximum amount is ₱100,000 per transaction.");
-                return;
-            }
-
-            const newTx = {
-                id: Date.now(),
-                refNum,
-                amount,
-                fee,
-                date,
-                timestamp: new Date().toISOString()
-            };
-
-            transactions.unshift(newTx);
-            localStorage.setItem('ck_transactions', JSON.stringify(transactions));
-            
-            showToast("Successfully recorded and claimed!");
-            clearForm();
-            document.getElementById('amount').focus();
-            
-            renderAll();
-        });
-
         function clearForm() {
             document.getElementById('transactionForm').reset();
             document.getElementById('transDate').valueAsDate = new Date();
             document.getElementById('calculatedFee').textContent = '₱0.00';
-        }
-
-        function saveFeeSetting() {
-            const newFee = parseInt(document.getElementById('feeSetting').value);
-            if (newFee > 0) {
-                feePerBracket = newFee;
-                localStorage.setItem('ck_feePerBracket', feePerBracket);
-                document.getElementById('feePerBracketDisplay').textContent = feePerBracket;
-                calculateFee();
-                showToast("Fee setting saved!");
-            }
         }
 
         function deleteTransaction(id) {
@@ -242,7 +225,6 @@
             }
         }
 
-        // --- Rendering ---
         function renderAll() {
             renderDashboard();
             renderHistory();
@@ -253,15 +235,10 @@
             const today = new Date().toISOString().split('T')[0];
             const todayTx = transactions.filter(t => t.date === today);
             
-            const todayCount = todayTx.length;
-            const todayAmount = todayTx.reduce((sum, t) => sum + t.amount, 0);
-            const todayFee = todayTx.reduce((sum, t) => sum + t.fee, 0);
-            const allTimeCount = transactions.length;
-
-            document.getElementById('dashTodayCount').textContent = todayCount;
-            document.getElementById('dashTodayAmount').textContent = '₱' + todayAmount.toLocaleString('en-PH', {minimumFractionDigits: 2});
-            document.getElementById('dashTodayFee').textContent = '₱' + todayFee.toLocaleString('en-PH', {minimumFractionDigits: 2});
-            document.getElementById('dashAllTimeCount').textContent = allTimeCount;
+            document.getElementById('dashTodayCount').textContent = todayTx.length;
+            document.getElementById('dashTodayAmount').textContent = '₱' + todayTx.reduce((s, t) => s + t.amount, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
+            document.getElementById('dashTodayFee').textContent = '₱' + todayTx.reduce((s, t) => s + t.fee, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
+            document.getElementById('dashAllTimeCount').textContent = transactions.length;
         }
 
         function renderHistory() {
@@ -275,19 +252,18 @@
 
             transactions.slice(0, 50).forEach(t => {
                 const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50 transition";
+                tr.className = "border-b";
                 tr.innerHTML = `
                     <td class="p-2 text-xs">${t.date}<br><span class="text-gray-400">${new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></td>
                     <td class="p-2 font-medium">${t.refNum}</td>
                     <td class="p-2 text-green-600">₱${t.amount.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
                     <td class="p-2 text-orange-600">₱${t.fee.toFixed(2)}</td>
-                    <td class="p-2"><button onclick="deleteTransaction(${t.id})" class="text-red-500 text-xs font-bold hover:underline">Delete</button></td>
+                    <td class="p-2"><button onclick="deleteTransaction(${t.id})" class="text-red-500 text-xs font-bold">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // --- Reports ---
         function setReportPeriod(period) {
             const customDiv = document.getElementById('customDateRange');
             const today = new Date().toISOString().split('T')[0];
@@ -311,90 +287,64 @@
         function generateReport() {
             const from = document.getElementById('reportFrom').value;
             const to = document.getElementById('reportTo').value;
-            
             if (!from || !to) return;
 
             const filtered = transactions.filter(t => t.date >= from && t.date <= to);
-            const count = filtered.length;
-            const totalAmount = filtered.reduce((sum, t) => sum + t.amount, 0);
-            const totalFee = filtered.reduce((sum, t) => sum + t.fee, 0);
-
-            document.getElementById('repCount').textContent = count;
-            document.getElementById('repAmount').textContent = '₱' + totalAmount.toLocaleString('en-PH', {minimumFractionDigits: 2});
-            document.getElementById('repFee').textContent = '₱' + totalFee.toLocaleString('en-PH', {minimumFractionDigits: 2});
+            document.getElementById('repCount').textContent = filtered.length;
+            document.getElementById('repAmount').textContent = '₱' + filtered.reduce((s, t) => s + t.amount, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
+            document.getElementById('repFee').textContent = '₱' + filtered.reduce((s, t) => s + t.fee, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
         }
 
-        // --- Data Management ---
         function exportBackup() {
+            if(transactions.length === 0) { alert("Walang data i-export."); return; }
             const dataStr = JSON.stringify(transactions, null, 2);
-            const dateStr = new Date().toISOString().split('T')[0];
-            const fileName = `cashout-kita-backup-${dateStr}.json`;
-            
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            
             const a = document.createElement('a');
             a.href = url;
-            a.download = fileName;
-            a.style.display = 'none';
+            a.download = 'cashout-kita-backup-' + new Date().toISOString().split('T')[0] + '.json';
             document.body.appendChild(a);
-            
             a.click();
-            
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
-            
-            showToast(`✅ Backup exported! Check your Downloads folder.`);
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("✅ Backup exported to Downloads!");
         }
 
-        function restoreBackup(input) {
-            const file = input.files[0];
-            if (!file) return;
-            
+        function restoreBackup(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (Array.isArray(data)) {
-                        if (confirm(`Restore ${data.length} records? This will merge with existing data.`)) {
-                            transactions = [...data, ...transactions];
-                            transactions = transactions.filter((v,i,a) => a.findIndex(t => (t.id === v.id)) === i);
-                            localStorage.setItem('ck_transactions', JSON.stringify(transactions));
-                            renderAll();
-                            showToast("Backup restored successfully!");
-                        }
-                    } else {
-                        alert("Invalid backup file format.");
+                    if (Array.isArray(data) && confirm('Restore ' + data.length + ' records?')) {
+                        transactions = [...data, ...transactions];
+                        transactions = transactions.filter((v,i,a) => a.findIndex(t => t.id === v.id) === i);
+                        localStorage.setItem('ck_transactions', JSON.stringify(transactions));
+                        renderAll();
+                        showToast("✅ Backup restored!");
                     }
-                } catch (err) {
-                    alert("Error reading file: " + err.message);
-                }
+                } catch (err) { alert("Error: " + err.message); }
             };
             reader.readAsText(file);
-            input.value = '';
         }
 
-        // --- OTA Update (SIMPLIFIED & RELIABLE) ---
-        async function checkForUpdate() {
-            showToast("Checking for update...");
-            
-            // 1. Clear the cache first
-            localStorage.removeItem(CACHE_KEY);
-            
-            // 2. Force reload the page (this will trigger the loader to fetch fresh copy)
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
+        function clearAllRecords() {
+            if (transactions.length === 0) { alert("Walang records na buburahin."); return; }
+            if (confirm("BABALA: Buburahin ang LAHAT. Sigurado ka ba? (Magse-save muna ng backup)")) {
+                exportBackup();
+                setTimeout(() => {
+                    localStorage.removeItem('ck_transactions');
+                    transactions = [];
+                    renderAll();
+                    showToast("✅ Na-backup at nabura na ang lahat!");
+                }, 1000);
+            }
         }
 
-        // --- Utility: Toast Notification ---
         function showToast(message) {
             const toast = document.getElementById("toast");
             toast.textContent = message;
             toast.className = "show";
-            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+            setTimeout(() => { toast.className = ""; }, 3000);
         }
     </script>
 </body>
