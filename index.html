@@ -21,9 +21,17 @@
 </head>
 <body class="p-4 pb-20">
 
+    <!-- Loading Overlay (Circular Progress Bar) -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center gap-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"></div>
+            <p class="text-gray-700 font-medium">Saving transaction...</p>
+        </div>
+    </div>
+
     <header class="mb-6 text-center">
-        <h1 class="text-2xl font-bold text-gray-800">GCash cashout recording</h1>
-        <p class="text-sm text-green-600 font-semibold">100% FREE · Web Version only</p>
+        <h1 class="text-2xl font-bold text-gray-800">Cashout Kita</h1>
+        <p class="text-sm text-green-600 font-semibold">100% FREE · Web Version</p>
         <p class="text-xs text-gray-500">Simple cash-out transaction recorder</p>
     </header>
 
@@ -58,15 +66,14 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Cash-out amount (₱) *</label>
-                <input type="number" id="amount" required max="100000" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="number" id="amount" required step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Transaction date *</label>
                 <input type="date" id="transDate" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div class="bg-blue-50 p-3 rounded-md border border-blue-100">
-                <p class="text-sm font-medium text-blue-800">Calculated service fee:</p>
-                <p class="text-xs text-blue-600">₱<span id="feePerBracketDisplay">5</span> per ₱500 bracket</p>
+                <p class="text-sm font-medium text-blue-800">Calculated service fee (1% rounded up to ₱5):</p>
                 <p class="text-2xl font-bold text-blue-700 mt-1" id="calculatedFee">₱0.00</p>
             </div>
             <div class="flex gap-2 pt-2">
@@ -74,18 +81,6 @@
                 <button type="button" id="clearBtn" class="bg-gray-200 text-gray-700 font-bold py-2.5 px-4 rounded-md active:scale-95">Clear</button>
             </div>
         </form>
-    </div>
-
-    <!-- Fee Settings -->
-    <div class="card p-4 mb-6">
-        <h2 class="font-bold text-lg mb-3 border-b pb-2">Fee Settings</h2>
-        <div class="flex gap-2 items-end">
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700">Fee per ₱500 bracket (₱)</label>
-                <input type="number" id="feeSetting" value="5" min="1" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 outline-none">
-            </div>
-            <button id="saveFeeBtn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md active:scale-95">Save</button>
-        </div>
     </div>
 
     <!-- Reports -->
@@ -138,7 +133,6 @@
                 Restore Backup
                 <input type="file" id="restoreFile" accept=".json" class="hidden">
             </label>
-            <button id="clearAllBtn" class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-md active:scale-95">Clear All Records</button>
         </div>
         <p class="text-xs text-gray-500 mt-3">Data is saved in your browser. Export regularly.</p>
     </div>
@@ -151,12 +145,9 @@
 
     <script>
         let transactions = JSON.parse(localStorage.getItem('ck_transactions')) || [];
-        let feePerBracket = parseInt(localStorage.getItem('ck_feePerBracket')) || 5;
         let isDuplicate = false;
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('feeSetting').value = feePerBracket;
-            document.getElementById('feePerBracketDisplay').textContent = feePerBracket;
             document.getElementById('transDate').valueAsDate = new Date();
             
             document.getElementById('amount').addEventListener('input', calculateFee);
@@ -180,7 +171,7 @@
                 if (exists) {
                     refNumError.classList.remove('hidden');
                     refNumInput.classList.add('input-error');
-                    saveBtn.disabled = true; // Disable save button
+                    saveBtn.disabled = true;
                     isDuplicate = true;
                 } else {
                     refNumError.classList.add('hidden');
@@ -190,6 +181,7 @@
                 }
             });
             
+            // FORM SUBMIT WITH SPINNER
             document.getElementById('transactionForm').addEventListener('submit', (e) => {
                 e.preventDefault();
                 
@@ -198,34 +190,34 @@
                     return;
                 }
 
-                const refNum = refNumInput.value.trim();
-                const amount = parseFloat(document.getElementById('amount').value);
-                const date = document.getElementById('transDate').value;
-                const fee = calculateFee();
+                // Show loading overlay
+                const overlay = document.getElementById('loadingOverlay');
+                overlay.classList.remove('hidden');
 
-                transactions.unshift({
-                    id: Date.now(), refNum, amount, fee, date, timestamp: new Date().toISOString()
-                });
-                
-                localStorage.setItem('ck_transactions', JSON.stringify(transactions));
-                showToast("✅ Successfully recorded and claimed!");
-                clearForm();
-                document.getElementById('amount').focus();
-                renderAll();
+                // Simulate processing delay
+                setTimeout(() => {
+                    const refNum = refNumInput.value.trim();
+                    const amount = parseFloat(document.getElementById('amount').value);
+                    const date = document.getElementById('transDate').value;
+                    const fee = calculateFee();
+
+                    transactions.unshift({
+                        id: Date.now(), refNum, amount, fee, date, timestamp: new Date().toISOString()
+                    });
+                    
+                    localStorage.setItem('ck_transactions', JSON.stringify(transactions));
+                    
+                    // Hide loading overlay
+                    overlay.classList.add('hidden');
+                    
+                    showToast("✅ Successfully recorded!");
+                    clearForm();
+                    document.getElementById('amount').focus();
+                    renderAll();
+                }, 800); // 800ms delay para makita ang spinner
             });
             
             document.getElementById('clearBtn').addEventListener('click', clearForm);
-            
-            document.getElementById('saveFeeBtn').addEventListener('click', () => {
-                const newFee = parseInt(document.getElementById('feeSetting').value);
-                if (newFee > 0) {
-                    feePerBracket = newFee;
-                    localStorage.setItem('ck_feePerBracket', feePerBracket);
-                    document.getElementById('feePerBracketDisplay').textContent = feePerBracket;
-                    calculateFee();
-                    showToast("✅ Fee setting saved!");
-                }
-            });
             
             document.getElementById('exportBtn').addEventListener('click', exportBackup);
             
@@ -235,17 +227,17 @@
                     e.target.value = '';
                 }
             });
-
-            document.getElementById('clearAllBtn').addEventListener('click', clearAllRecords);
             
             renderAll();
         });
 
+        // NEW FEE LOGIC: 1% rounded up to nearest 5
         function calculateFee() {
             const amount = parseFloat(document.getElementById('amount').value) || 0;
-            const brackets = Math.ceil(amount / 500);
-            const fee = brackets * feePerBracket;
-            document.getElementById('calculatedFee').textContent = '₱' + fee.toFixed(2);
+            const rawFee = amount * 0.01;
+            // Round up to the nearest 5
+            const fee = Math.ceil(rawFee / 5) * 5;
+            document.getElementById('calculatedFee').textContent = '₱' + fee.toLocaleString('en-PH', {minimumFractionDigits: 2});
             return fee;
         }
 
@@ -301,7 +293,7 @@
                     <td class="p-2 text-xs">${t.date}<br><span class="text-gray-400">${new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></td>
                     <td class="p-2 font-medium">${t.refNum}</td>
                     <td class="p-2 text-green-600">₱${t.amount.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                    <td class="p-2 text-orange-600">₱${t.fee.toFixed(2)}</td>
+                    <td class="p-2 text-orange-600">₱${t.fee.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
                     <td class="p-2"><button onclick="deleteTransaction(${t.id})" class="text-red-500 text-xs font-bold">Delete</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -339,7 +331,6 @@
             document.getElementById('repFee').textContent = '₱' + filtered.reduce((s, t) => s + t.fee, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
         }
 
-        // FIXED EXPORT BACKUP
         function exportBackup() {
             if (transactions.length === 0) { 
                 showToast("Walang data i-export."); 
@@ -356,10 +347,8 @@
             a.style.display = 'none';
             document.body.appendChild(a);
             
-            // Trigger download
             a.click();
             
-            // Cleanup
             setTimeout(() => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
@@ -383,19 +372,6 @@
                 } catch (err) { alert("Error: " + err.message); }
             };
             reader.readAsText(file);
-        }
-
-        function clearAllRecords() {
-            if (transactions.length === 0) { alert("Walang records na buburahin."); return; }
-            if (confirm("BABALA: Buburahin ang LAHAT. Sigurado ka ba? (Magse-save muna ng backup)")) {
-                exportBackup();
-                setTimeout(() => {
-                    localStorage.removeItem('ck_transactions');
-                    transactions = [];
-                    renderAll();
-                    showToast("✅ Na-backup at nabura na ang lahat!");
-                }, 1000);
-            }
         }
 
         function showToast(message) {
