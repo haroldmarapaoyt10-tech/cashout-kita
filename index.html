@@ -116,7 +116,7 @@
         </div>
     </div>
 
-    <!-- History -->
+    <!-- Transaction History with Pagination -->
     <div class="card p-4 mb-6">
         <h2 class="font-bold text-lg mb-3 border-b pb-2">Transaction History</h2>
         <div class="overflow-x-auto">
@@ -134,6 +134,26 @@
                     <tr><td colspan="5" class="p-4 text-center text-gray-500">No transactions yet.</td></tr>
                 </tbody>
             </table>
+        </div>
+        
+        <!-- Pagination Controls -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mt-4 gap-3 text-sm border-t pt-3">
+            <div class="flex items-center gap-2">
+                <span class="text-gray-600">Rows per page:</span>
+                <select id="rowsPerPage" class="border border-gray-300 rounded p-1 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="prevPage" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition">Previous</button>
+                <span id="pageInfo" class="text-gray-600 font-medium">Page 1 of 1</span>
+                <button id="nextPage" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition">Next</button>
+            </div>
         </div>
     </div>
 
@@ -160,14 +180,35 @@
         let transactions = JSON.parse(localStorage.getItem('ck_transactions')) || [];
         let feePercentage = parseFloat(localStorage.getItem('ck_feePercentage')) || 1;
         let isDuplicate = false;
+        
+        // Pagination State
+        let currentPage = 1;
+        let rowsPerPage = 10;
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('feePercentage').value = feePercentage;
             document.getElementById('feePercentLabel').textContent = feePercentage;
             document.getElementById('transDate').valueAsDate = new Date();
+            document.getElementById('rowsPerPage').value = rowsPerPage;
             
             document.getElementById('amount').addEventListener('input', calculateFee);
             
+            // Pagination Event Listeners
+            document.getElementById('rowsPerPage').addEventListener('change', (e) => {
+                rowsPerPage = parseInt(e.target.value);
+                currentPage = 1; // Reset to first page
+                renderHistory();
+            });
+            
+            document.getElementById('prevPage').addEventListener('click', () => {
+                if (currentPage > 1) { currentPage--; renderHistory(); }
+            });
+            
+            document.getElementById('nextPage').addEventListener('click', () => {
+                const totalPages = Math.ceil(transactions.length / rowsPerPage) || 1;
+                if (currentPage < totalPages) { currentPage++; renderHistory(); }
+            });
+
             // LIVE DUPLICATE CHECKER
             const refNumInput = document.getElementById('refNum');
             const refNumError = document.getElementById('refNumError');
@@ -278,6 +319,11 @@
             if (confirm("Delete this record?")) {
                 transactions = transactions.filter(t => t.id !== id);
                 localStorage.setItem('ck_transactions', JSON.stringify(transactions));
+                
+                // Adjust page if current page becomes empty
+                const totalPages = Math.ceil(transactions.length / rowsPerPage) || 1;
+                if (currentPage > totalPages) currentPage = totalPages;
+                
                 renderAll();
             }
         }
@@ -304,10 +350,18 @@
             
             if (transactions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No transactions yet.</td></tr>';
+                updatePaginationControls(0);
                 return;
             }
 
-            transactions.slice(0, 50).forEach(t => {
+            const totalPages = Math.ceil(transactions.length / rowsPerPage);
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const paginatedTxns = transactions.slice(startIndex, endIndex);
+
+            paginatedTxns.forEach(t => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b";
                 tr.innerHTML = `
@@ -319,6 +373,14 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            updatePaginationControls(totalPages);
+        }
+
+        function updatePaginationControls(totalPages) {
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prevPage').disabled = currentPage <= 1;
+            document.getElementById('nextPage').disabled = currentPage >= totalPages;
         }
 
         function setReportPeriod(period) {
@@ -387,6 +449,7 @@
                         transactions = [...data, ...transactions];
                         transactions = transactions.filter((v,i,a) => a.findIndex(t => t.id === v.id) === i);
                         localStorage.setItem('ck_transactions', JSON.stringify(transactions));
+                        currentPage = 1; // Reset to page 1 after restore
                         renderAll();
                         showToast("✅ Backup restored!");
                     }
