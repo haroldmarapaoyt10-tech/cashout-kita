@@ -16,6 +16,7 @@
             transition: opacity 0.3s, bottom 0.3s;
         }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+        .input-error { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
     </style>
 </head>
 <body class="p-4 pb-20">
@@ -52,7 +53,8 @@
         <form id="transactionForm" class="space-y-3">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Reference number *</label>
-                <input type="text" id="refNum" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="refNum" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
+                <p id="refNumError" class="text-xs text-red-500 mt-1 hidden">⚠️ Duplicate reference number!</p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Cash-out amount (₱) *</label>
@@ -68,7 +70,7 @@
                 <p class="text-2xl font-bold text-blue-700 mt-1" id="calculatedFee">₱0.00</p>
             </div>
             <div class="flex gap-2 pt-2">
-                <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-2.5 px-4 rounded-md active:scale-95">Save</button>
+                <button type="submit" id="saveBtn" class="flex-1 bg-blue-600 text-white font-bold py-2.5 px-4 rounded-md active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed">Save</button>
                 <button type="button" id="clearBtn" class="bg-gray-200 text-gray-700 font-bold py-2.5 px-4 rounded-md active:scale-95">Clear</button>
             </div>
         </form>
@@ -150,6 +152,7 @@
     <script>
         let transactions = JSON.parse(localStorage.getItem('ck_transactions')) || [];
         let feePerBracket = parseInt(localStorage.getItem('ck_feePerBracket')) || 5;
+        let isDuplicate = false;
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('feeSetting').value = feePerBracket;
@@ -158,9 +161,44 @@
             
             document.getElementById('amount').addEventListener('input', calculateFee);
             
+            // LIVE DUPLICATE CHECKER
+            const refNumInput = document.getElementById('refNum');
+            const refNumError = document.getElementById('refNumError');
+            const saveBtn = document.getElementById('saveBtn');
+
+            refNumInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim().toLowerCase();
+                if (val === '') {
+                    refNumError.classList.add('hidden');
+                    refNumInput.classList.remove('input-error');
+                    saveBtn.disabled = false;
+                    isDuplicate = false;
+                    return;
+                }
+                
+                const exists = transactions.some(t => t.refNum.toLowerCase() === val);
+                if (exists) {
+                    refNumError.classList.remove('hidden');
+                    refNumInput.classList.add('input-error');
+                    saveBtn.disabled = true; // Disable save button
+                    isDuplicate = true;
+                } else {
+                    refNumError.classList.add('hidden');
+                    refNumInput.classList.remove('input-error');
+                    saveBtn.disabled = false;
+                    isDuplicate = false;
+                }
+            });
+            
             document.getElementById('transactionForm').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const refNum = document.getElementById('refNum').value.trim();
+                
+                if (isDuplicate) {
+                    showToast("⚠️ Duplicate Reference Number!");
+                    return;
+                }
+
+                const refNum = refNumInput.value.trim();
                 const amount = parseFloat(document.getElementById('amount').value);
                 const date = document.getElementById('transDate').value;
                 const fee = calculateFee();
@@ -215,6 +253,12 @@
             document.getElementById('transactionForm').reset();
             document.getElementById('transDate').valueAsDate = new Date();
             document.getElementById('calculatedFee').textContent = '₱0.00';
+            
+            // Reset duplicate checker
+            document.getElementById('refNum').classList.remove('input-error');
+            document.getElementById('refNumError').classList.add('hidden');
+            document.getElementById('saveBtn').disabled = false;
+            isDuplicate = false;
         }
 
         function deleteTransaction(id) {
@@ -295,18 +339,32 @@
             document.getElementById('repFee').textContent = '₱' + filtered.reduce((s, t) => s + t.fee, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
         }
 
+        // FIXED EXPORT BACKUP
         function exportBackup() {
-            if(transactions.length === 0) { alert("Walang data i-export."); return; }
+            if (transactions.length === 0) { 
+                showToast("Walang data i-export."); 
+                return; 
+            }
+            
             const dataStr = JSON.stringify(transactions, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
+            const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
+            
             const a = document.createElement('a');
             a.href = url;
             a.download = 'cashout-kita-backup-' + new Date().toISOString().split('T')[0] + '.json';
+            a.style.display = 'none';
             document.body.appendChild(a);
+            
+            // Trigger download
             a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            
+            // Cleanup
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+            
             showToast("✅ Backup exported to Downloads!");
         }
 
