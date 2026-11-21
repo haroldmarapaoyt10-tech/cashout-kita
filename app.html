@@ -163,7 +163,9 @@
         // --- State Management ---
         let transactions = JSON.parse(localStorage.getItem('ck_transactions')) || [];
         let feePerBracket = parseInt(localStorage.getItem('ck_feePerBracket')) || 5;
-        const GITHUB_URL = 'https://raw.githubusercontent.com/haroldmarapaoyt10-tech/cashout-kita/refs/heads/main/app.html';
+        
+        // ⚠️ PALITAN MO ITO NG TUNAY MONG RAW GITHUB URL
+        const GITHUB_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/cashout-kita/main/app.html';
         const CACHE_KEY = 'ck_app_cache_v3';
 
         // --- Initialization ---
@@ -374,35 +376,17 @@
             input.value = '';
         }
 
-        // --- OTA Update (FIXED) ---
+        // --- OTA Update (SIMPLIFIED & RELIABLE) ---
         async function checkForUpdate() {
             showToast("Checking for update...");
             
-            try {
-                // Fetch fresh copy from GitHub
-                const response = await fetch(GITHUB_URL + '?t=' + Date.now(), { cache: 'no-store' });
-                
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
-                }
-                
-                const newHtml = await response.text();
-                
-                // Save to cache
-                localStorage.setItem(CACHE_KEY, newHtml);
-                
-                // Replace current page with new content
-                document.open();
-                document.write(newHtml);
-                document.close();
-                
-                showToast("✅ Updated successfully!");
-            } catch (error) {
-                console.error('Update error:', error);
-                // Clear cache and reload to force fresh load
-                localStorage.removeItem(CACHE_KEY);
-                showToast("❌ Update failed. Check your internet connection.");
-            }
+            // 1. Clear the cache first
+            localStorage.removeItem(CACHE_KEY);
+            
+            // 2. Force reload the page (this will trigger the loader to fetch fresh copy)
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
         }
 
         // --- Utility: Toast Notification ---
