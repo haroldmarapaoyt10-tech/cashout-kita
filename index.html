@@ -21,11 +21,29 @@
 </head>
 <body class="p-4 pb-20">
 
-    <!-- Loading Overlay (Circular Progress Bar) -->
+    <!-- Loading Overlay -->
     <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center gap-4">
             <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"></div>
             <p class="text-gray-700 font-medium">Saving transaction...</p>
+        </div>
+    </div>
+
+    <!-- Clear All Data Modal (Popup) -->
+    <div id="clearAllModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 transform transition-all">
+            <h3 class="text-lg font-bold text-red-600 mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                Clear All Data
+            </h3>
+            <p class="text-sm text-gray-700 mb-4 leading-relaxed">
+                I-type ang <strong>"CONFIRM"</strong> na word upper case lahat para mabura lahat ng transaction mo. Make sure na nakapag backup for your future reference.
+            </p>
+            <input type="text" id="confirmInput" placeholder="Type CONFIRM here..." class="w-full border-2 border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none uppercase font-bold tracking-wider text-center">
+            <div class="flex gap-3">
+                <button id="cancelClearBtn" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg hover:bg-gray-300 transition active:scale-95">Cancel</button>
+                <button id="proceedClearBtn" disabled class="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-red-700 transition active:scale-95">Delete All</button>
+            </div>
         </div>
     </div>
 
@@ -116,7 +134,7 @@
         </div>
     </div>
 
-    <!-- Transaction History with Pagination -->
+    <!-- Transaction History -->
     <div class="card p-4 mb-6">
         <h2 class="font-bold text-lg mb-3 border-b pb-2">Transaction History</h2>
         <div class="overflow-x-auto">
@@ -136,7 +154,6 @@
             </table>
         </div>
         
-        <!-- Pagination Controls -->
         <div class="flex flex-col sm:flex-row justify-between items-center mt-4 gap-3 text-sm border-t pt-3">
             <div class="flex items-center gap-2">
                 <span class="text-gray-600">Rows per page:</span>
@@ -163,11 +180,11 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button id="exportJsonBtn" class="w-full bg-indigo-600 text-white font-bold py-2.5 px-4 rounded-md active:scale-95 flex items-center justify-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Export JSON (Backup)
+                Export JSON
             </button>
             <button id="exportExcelBtn" class="w-full bg-green-600 text-white font-bold py-2.5 px-4 rounded-md active:scale-95 flex items-center justify-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                Export Excel (CSV)
+                Export Excel
             </button>
         </div>
         <div class="mt-3">
@@ -176,7 +193,37 @@
                 <input type="file" id="restoreFile" accept=".json" class="hidden">
             </label>
         </div>
+        <div class="mt-3">
+            <button id="clearAllBtn" class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-md active:scale-95 flex items-center justify-center gap-2 border-2 border-red-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                Clear All Data
+            </button>
+        </div>
         <p class="text-xs text-gray-500 mt-3">JSON is for app backup/restore. CSV opens directly in Excel or Google Sheets.</p>
+    </div>
+
+    <!-- Support & Donations -->
+    <div class="card p-4 mb-6">
+        <h2 class="font-bold text-lg mb-3 border-b pb-2 flex items-center gap-2">
+            <span>❤️</span> Support the Developer
+        </h2>
+        <p class="text-sm text-gray-700 mb-2">
+            This app is 100% free and open to use. If you find <strong>Cashout Kita</strong> helpful for your daily business or personal transactions, you can support the developer.
+        </p>
+        <p class="text-sm font-semibold text-gray-800 mb-3">Any amount is highly appreciated! 🙏</p>
+        
+        <div class="bg-gray-50 p-3 rounded-md border border-gray-100 space-y-2 text-sm">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-blue-600 w-14">GCash:</span>
+                <span class="text-gray-700 select-all">09260467615</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-purple-600 w-14">Maya:</span>
+                <span class="text-gray-700 select-all">09260467615</span>
+            </div>
+        </div>
+        
+        <p class="text-xs text-gray-500 mt-3">Thank you for your support! It helps keep this project free and maintained.</p>
     </div>
 
     <footer class="text-center text-xs text-gray-400 pb-8">
@@ -189,8 +236,6 @@
         let transactions = JSON.parse(localStorage.getItem('ck_transactions')) || [];
         let feePercentage = parseFloat(localStorage.getItem('ck_feePercentage')) || 1;
         let isDuplicate = false;
-        
-        // Pagination State
         let currentPage = 1;
         let rowsPerPage = 10;
 
@@ -202,7 +247,6 @@
             
             document.getElementById('amount').addEventListener('input', calculateFee);
             
-            // Pagination Event Listeners
             document.getElementById('rowsPerPage').addEventListener('change', (e) => {
                 rowsPerPage = parseInt(e.target.value);
                 currentPage = 1;
@@ -218,7 +262,6 @@
                 if (currentPage < totalPages) { currentPage++; renderHistory(); }
             });
 
-            // LIVE DUPLICATE CHECKER
             const refNumInput = document.getElementById('refNum');
             const refNumError = document.getElementById('refNumError');
             const saveBtn = document.getElementById('saveBtn');
@@ -247,14 +290,9 @@
                 }
             });
             
-            // FORM SUBMIT WITH SPINNER
             document.getElementById('transactionForm').addEventListener('submit', (e) => {
                 e.preventDefault();
-                
-                if (isDuplicate) {
-                    showToast("⚠️ Duplicate Reference Number!");
-                    return;
-                }
+                if (isDuplicate) { showToast("⚠️ Duplicate Reference Number!"); return; }
 
                 const overlay = document.getElementById('loadingOverlay');
                 overlay.classList.remove('hidden');
@@ -265,10 +303,7 @@
                     const date = document.getElementById('transDate').value;
                     const fee = calculateFee();
 
-                    transactions.unshift({
-                        id: Date.now(), refNum, amount, fee, date, timestamp: new Date().toISOString()
-                    });
-                    
+                    transactions.unshift({ id: Date.now(), refNum, amount, fee, date, timestamp: new Date().toISOString() });
                     localStorage.setItem('ck_transactions', JSON.stringify(transactions));
                     overlay.classList.add('hidden');
                     
@@ -292,21 +327,55 @@
                 }
             });
             
-            // Export Buttons
             document.getElementById('exportJsonBtn').addEventListener('click', exportToJSON);
             document.getElementById('exportExcelBtn').addEventListener('click', exportToCSV);
             
             document.getElementById('restoreFile').addEventListener('change', (e) => {
-                if (e.target.files[0]) {
-                    restoreBackup(e.target.files[0]);
-                    e.target.value = '';
+                if (e.target.files[0]) { restoreBackup(e.target.files[0]); e.target.value = ''; }
+            });
+
+            // --- CLEAR ALL DATA MODAL LOGIC ---
+            const clearAllModal = document.getElementById('clearAllModal');
+            const confirmInput = document.getElementById('confirmInput');
+            const proceedClearBtn = document.getElementById('proceedClearBtn');
+            const cancelClearBtn = document.getElementById('cancelClearBtn');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+
+            clearAllBtn.addEventListener('click', () => {
+                clearAllModal.classList.remove('hidden');
+                confirmInput.value = '';
+                proceedClearBtn.disabled = true;
+                setTimeout(() => confirmInput.focus(), 100);
+            });
+
+            cancelClearBtn.addEventListener('click', () => {
+                clearAllModal.classList.add('hidden');
+            });
+
+            confirmInput.addEventListener('input', (e) => {
+                // Force uppercase visually and check strictly
+                e.target.value = e.target.value.toUpperCase();
+                if (e.target.value === 'CONFIRM') {
+                    proceedClearBtn.disabled = false;
+                } else {
+                    proceedClearBtn.disabled = true;
+                }
+            });
+
+            proceedClearBtn.addEventListener('click', () => {
+                if (confirmInput.value === 'CONFIRM') {
+                    transactions = [];
+                    localStorage.removeItem('ck_transactions');
+                    clearAllModal.classList.add('hidden');
+                    currentPage = 1;
+                    renderAll();
+                    showToast("✅ All data cleared successfully!");
                 }
             });
             
             renderAll();
         });
 
-        // FEE LOGIC
         function calculateFee() {
             const amount = parseFloat(document.getElementById('amount').value) || 0;
             const rawFee = amount * (feePercentage / 100);
@@ -319,7 +388,6 @@
             document.getElementById('transactionForm').reset();
             document.getElementById('transDate').valueAsDate = new Date();
             document.getElementById('calculatedFee').textContent = '₱0.00';
-            
             document.getElementById('refNum').classList.remove('input-error');
             document.getElementById('refNumError').classList.add('hidden');
             document.getElementById('saveBtn').disabled = false;
@@ -330,24 +398,17 @@
             if (confirm("Delete this record?")) {
                 transactions = transactions.filter(t => t.id !== id);
                 localStorage.setItem('ck_transactions', JSON.stringify(transactions));
-                
                 const totalPages = Math.ceil(transactions.length / rowsPerPage) || 1;
                 if (currentPage > totalPages) currentPage = totalPages;
-                
                 renderAll();
             }
         }
 
-        function renderAll() {
-            renderDashboard();
-            renderHistory();
-            generateReport();
-        }
+        function renderAll() { renderDashboard(); renderHistory(); generateReport(); }
 
         function renderDashboard() {
             const today = new Date().toISOString().split('T')[0];
             const todayTx = transactions.filter(t => t.date === today);
-            
             document.getElementById('dashTodayCount').textContent = todayTx.length;
             document.getElementById('dashTodayAmount').textContent = '₱' + todayTx.reduce((s, t) => s + t.amount, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
             document.getElementById('dashTodayFee').textContent = '₱' + todayTx.reduce((s, t) => s + t.fee, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
@@ -357,16 +418,13 @@
         function renderHistory() {
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = '';
-            
             if (transactions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No transactions yet.</td></tr>';
                 updatePaginationControls(0);
                 return;
             }
-
             const totalPages = Math.ceil(transactions.length / rowsPerPage);
             if (currentPage > totalPages) currentPage = totalPages;
-
             const startIndex = (currentPage - 1) * rowsPerPage;
             const endIndex = startIndex + rowsPerPage;
             const paginatedTxns = transactions.slice(startIndex, endIndex);
@@ -383,7 +441,6 @@
                 `;
                 tbody.appendChild(tr);
             });
-
             updatePaginationControls(totalPages);
         }
 
@@ -396,7 +453,6 @@
         function setReportPeriod(period) {
             const customDiv = document.getElementById('customDateRange');
             const today = new Date().toISOString().split('T')[0];
-            
             if (period === 'today') {
                 customDiv.classList.add('hidden');
                 document.getElementById('reportFrom').value = today;
@@ -417,59 +473,38 @@
             const from = document.getElementById('reportFrom').value;
             const to = document.getElementById('reportTo').value;
             if (!from || !to) return;
-
             const filtered = transactions.filter(t => t.date >= from && t.date <= to);
             document.getElementById('repCount').textContent = filtered.length;
             document.getElementById('repAmount').textContent = '₱' + filtered.reduce((s, t) => s + t.amount, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
             document.getElementById('repFee').textContent = '₱' + filtered.reduce((s, t) => s + t.fee, 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
         }
 
-        // EXPORT TO JSON (For Backup/Restore)
         function exportToJSON() {
             if (transactions.length === 0) { showToast("Walang data i-export."); return; }
-            
             const dataStr = JSON.stringify(transactions, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            
             const a = document.createElement('a');
-            a.href = url;
-            a.download = 'cashout-kita-backup-' + new Date().toISOString().split('T')[0] + '.json';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            
+            a.href = url; a.download = 'cashout-kita-backup-' + new Date().toISOString().split('T')[0] + '.json';
+            a.style.display = 'none'; document.body.appendChild(a); a.click();
             setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
             showToast("✅ JSON Backup exported!");
         }
 
-        // EXPORT TO CSV (For Excel/Google Sheets)
         function exportToCSV() {
             if (transactions.length === 0) { showToast("Walang data i-export."); return; }
-            
             let csvContent = "Date,Time,Reference Number,Cash-out Amount,Fee\n";
-            
             transactions.forEach(t => {
                 const date = t.date;
                 const time = new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                // Wrap refNum in quotes to handle commas if any
                 const ref = `"${t.refNum.replace(/"/g, '""')}"`; 
-                const amount = t.amount;
-                const fee = t.fee;
-                
-                csvContent += `${date},${time},${ref},${amount},${fee}\n`;
+                csvContent += `${date},${time},${ref},${t.amount},${t.fee}\n`;
             });
-            
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            
             const a = document.createElement('a');
-            a.href = url;
-            a.download = 'cashout-kita-report-' + new Date().toISOString().split('T')[0] + '.csv';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            
+            a.href = url; a.download = 'cashout-kita-report-' + new Date().toISOString().split('T')[0] + '.csv';
+            a.style.display = 'none'; document.body.appendChild(a); a.click();
             setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
             showToast("✅ Excel (CSV) exported!");
         }
