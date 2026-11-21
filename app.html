@@ -89,7 +89,7 @@
         <p class="text-xs text-gray-500 mt-2">Default: ₱1–₱500 = ₱5, ₱501–₱1,000 = ₱10, etc. New transactions use current setting; old records keep original fees.</p>
     </div>
 
-    <!-- Reports (without chart) -->
+    <!-- Reports -->
     <div class="card p-4 mb-6">
         <h2 class="font-bold text-lg mb-3 border-b pb-2">Reports</h2>
         <div class="flex gap-2 mb-3 flex-wrap">
@@ -143,11 +143,11 @@
         <p class="text-xs text-gray-500 mt-3">Your records are saved on this device/browser. Export a backup regularly.</p>
     </div>
 
-    <!-- Check for Update Button -->
+    <!-- OTA Update Button -->
     <div class="text-center py-4 border-t border-gray-200 mt-4">
         <button onclick="checkForUpdate()" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-md active:scale-95 flex items-center justify-center gap-2 mx-auto">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            Check for Update
+            OTA Update
         </button>
         <p class="text-xs text-gray-400 mt-2">Clears cache and reloads the latest version from server.</p>
     </div>
@@ -159,10 +159,7 @@
     <!-- Toast Notification Element -->
     <div id="toast">Successfully recorded and claimed!</div>
 
-    <script type="module">
-        import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-        import { Share } from '@capacitor/share';
-
+    <script>
         // --- State Management ---
         let transactions = JSON.parse(localStorage.getItem('ck_transactions')) || [];
         let feePerBracket = parseInt(localStorage.getItem('ck_feePerBracket')) || 5;
@@ -286,7 +283,7 @@
             });
         }
 
-        // --- Reports (without chart) ---
+        // --- Reports ---
         function setReportPeriod(period) {
             const customDiv = document.getElementById('customDateRange');
             const today = new Date().toISOString().split('T')[0];
@@ -323,38 +320,33 @@
             document.getElementById('repFee').textContent = '₱' + totalFee.toLocaleString('en-PH', {minimumFractionDigits: 2});
         }
 
-        // --- Data Management (with Capacitor Filesystem) ---
-        async function exportBackup() {
+        // --- Data Management (Fixed for Android 16) ---
+        function exportBackup() {
             const dataStr = JSON.stringify(transactions, null, 2);
             const dateStr = new Date().toISOString().split('T')[0];
             const fileName = `cashout-kita-backup-${dateStr}.json`;
             
-            try {
-                // Save to Documents folder using Capacitor Filesystem
-                const result = await Filesystem.writeFile({
-                    path: fileName,
-                    data: dataStr,
-                    directory: Directory.Documents,
-                    encoding: Encoding.UTF8
-                });
-                
-                showToast(`✅ Backup saved to Documents folder!`);
-                
-                // Show share dialog
-                try {
-                    await Share.share({
-                        title: 'Cashout Kita Backup',
-                        text: 'Backup file ng Cashout Kita',
-                        url: result.uri,
-                        dialogTitle: 'Share Backup File'
-                    });
-                } catch (shareErr) {
-                    console.log('Share cancelled or failed');
-                }
-            } catch (err) {
-                console.error('Filesystem error:', err);
-                alert('Error saving backup: ' + err.message);
-            }
+            // Create Blob (works on Android 16)
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create download link
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            
+            // Trigger download
+            a.click();
+            
+            // Cleanup
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+            
+            showToast(`✅ Backup exported! Check your Downloads folder.`);
         }
 
         function restoreBackup(input) {
@@ -384,13 +376,23 @@
             input.value = '';
         }
 
-        // --- Update Checker ---
+        // --- OTA Update (Fixed) ---
         function checkForUpdate() {
             showToast("Checking for update...");
-            localStorage.removeItem('ck_app_cache_v2');
+            
+            // Clear the cache
+            localStorage.removeItem('ck_app_cache_v3');
+            
+            // Force reload the parent window (loader)
             setTimeout(() => {
-                window.top.location.reload();
-            }, 1000);
+                if (window.top !== window.self) {
+                    // We're in an iframe, reload parent
+                    window.top.location.reload();
+                } else {
+                    // We're not in iframe, just reload
+                    window.location.reload();
+                }
+            }, 500);
         }
 
         // --- Utility: Toast Notification ---
@@ -400,17 +402,6 @@
             toast.className = "show";
             setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
         }
-
-        // Expose functions to global scope for onclick handlers
-        window.calculateFee = calculateFee;
-        window.clearForm = clearForm;
-        window.saveFeeSetting = saveFeeSetting;
-        window.deleteTransaction = deleteTransaction;
-        window.setReportPeriod = setReportPeriod;
-        window.generateReport = generateReport;
-        window.exportBackup = exportBackup;
-        window.restoreBackup = restoreBackup;
-        window.checkForUpdate = checkForUpdate;
     </script>
 </body>
 </html>
