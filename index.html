@@ -17,19 +17,26 @@
         }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
         .input-error { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
+        
+        /* AI Assistant Styles */
+        #aiFab { transition: transform 0.2s; }
+        #aiFab:active { transform: scale(0.9); }
+        .chat-bubble { max-width: 85%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+        .ai-bubble { background-color: #f3f4f6; color: #1f2937; border-bottom-left-radius: 4px; }
+        .user-bubble { background-color: #3b82f6; color: white; border-bottom-right-radius: 4px; margin-left: auto; }
     </style>
 </head>
-<body class="p-4 pb-20">
+<body class="p-4 pb-24">
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center gap-4">
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/50 z-[110] flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center gap-4 max-w-xs w-full mx-4">
             <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"></div>
-            <p class="text-gray-700 font-medium">Saving transaction...</p>
+            <p class="text-gray-700 font-medium text-center" id="loadingText">Saving transaction...</p>
         </div>
     </div>
 
-    <!-- Clear All Data Modal (Popup) -->
+    <!-- Clear All Data Modal -->
     <div id="clearAllModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 transform transition-all">
             <h3 class="text-lg font-bold text-red-600 mb-3 flex items-center gap-2">
@@ -43,6 +50,38 @@
             <div class="flex gap-3">
                 <button id="cancelClearBtn" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg hover:bg-gray-300 transition active:scale-95">Cancel</button>
                 <button id="proceedClearBtn" disabled class="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-red-700 transition active:scale-95">Delete All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant Chat Modal -->
+    <div id="aiAssistantModal" class="hidden fixed inset-0 bg-black/50 z-[105] flex items-end sm:items-center justify-center backdrop-blur-sm p-0 sm:p-4">
+        <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[85vh] overflow-hidden">
+            <!-- Header -->
+            <div class="p-4 border-b bg-gradient-to-r from-green-500 to-green-600 text-white flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl">💬</div>
+                    <div>
+                        <h3 class="font-bold text-base">Chat with Developer</h3>
+                        <p class="text-xs text-green-100">Send feedback via WhatsApp</p>
+                    </div>
+                </div>
+                <button id="closeAiModal" class="text-white/80 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            
+            <!-- Chat Area -->
+            <div class="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-3" id="chatContainer">
+                <div class="chat-bubble ai-bubble">
+                    👋 Hello! Do you have any <strong>feedback, suggestions, or bugs</strong> to report? 
+                    <br><br>
+                    Type your message below and I will open WhatsApp to send it directly to the developer! 🚀
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-3 border-t bg-white flex gap-2">
+                <textarea id="aiFeedbackInput" rows="1" placeholder="Type your feedback here..." class="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-green-500 outline-none resize-none max-h-24"></textarea>
+                <button id="sendFeedbackBtn" class="bg-green-600 text-white px-4 rounded-lg font-bold hover:bg-green-700 transition active:scale-95 disabled:bg-gray-300">Send</button>
             </div>
         </div>
     </div>
@@ -80,7 +119,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700">Reference number *</label>
                 <input type="text" id="refNum" required class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
-                <p id="refNumError" class="text-xs text-red-500 mt-1 hidden">⚠️ Duplicate reference number!</p>
+                <p id="refNumError" class="text-xs text-red-500 mt-1 hidden font-semibold"></p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Cash-out amount (₱) *</label>
@@ -230,6 +269,13 @@
         Cashout Kita · Free · Works on any device
     </footer>
 
+    <!-- Floating WhatsApp Assistant Button -->
+    <button id="aiFab" class="fixed bottom-6 right-6 w-14 h-14 bg-green-500 text-white rounded-full shadow-lg flex items-center justify-center z-50 hover:shadow-xl hover:bg-green-600 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+        </svg>
+    </button>
+
     <div id="toast">Success!</div>
 
     <script>
@@ -239,6 +285,9 @@
         let currentPage = 1;
         let rowsPerPage = 10;
 
+        // ⚠️ YOUR WHATSAPP NUMBER (International format, no + sign)
+        const DEV_WHATSAPP_NUMBER = "639932429485"; 
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('feePercentage').value = feePercentage;
             document.getElementById('feePercentLabel').textContent = feePercentage;
@@ -247,66 +296,48 @@
             
             document.getElementById('amount').addEventListener('input', calculateFee);
             
-            document.getElementById('rowsPerPage').addEventListener('change', (e) => {
-                rowsPerPage = parseInt(e.target.value);
-                currentPage = 1;
-                renderHistory();
-            });
-            
-            document.getElementById('prevPage').addEventListener('click', () => {
-                if (currentPage > 1) { currentPage--; renderHistory(); }
-            });
-            
-            document.getElementById('nextPage').addEventListener('click', () => {
-                const totalPages = Math.ceil(transactions.length / rowsPerPage) || 1;
-                if (currentPage < totalPages) { currentPage++; renderHistory(); }
-            });
+            document.getElementById('rowsPerPage').addEventListener('change', (e) => { rowsPerPage = parseInt(e.target.value); currentPage = 1; renderHistory(); });
+            document.getElementById('prevPage').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderHistory(); } });
+            document.getElementById('nextPage').addEventListener('click', () => { const totalPages = Math.ceil(transactions.length / rowsPerPage) || 1; if (currentPage < totalPages) { currentPage++; renderHistory(); } });
 
             const refNumInput = document.getElementById('refNum');
             const refNumError = document.getElementById('refNumError');
             const saveBtn = document.getElementById('saveBtn');
 
+            // SMART DUPLICATE CHECKER
             refNumInput.addEventListener('input', (e) => {
-                const val = e.target.value.trim().toLowerCase();
-                if (val === '') {
-                    refNumError.classList.add('hidden');
-                    refNumInput.classList.remove('input-error');
-                    saveBtn.disabled = false;
-                    isDuplicate = false;
-                    return;
-                }
+                const val = e.target.value.trim();
+                if (val === '') { refNumError.classList.add('hidden'); refNumInput.classList.remove('input-error'); saveBtn.disabled = false; isDuplicate = false; return; }
                 
-                const exists = transactions.some(t => t.refNum.toLowerCase() === val);
-                if (exists) {
-                    refNumError.classList.remove('hidden');
-                    refNumInput.classList.add('input-error');
-                    saveBtn.disabled = true;
-                    isDuplicate = true;
+                const existsExact = transactions.some(t => t.refNum.toLowerCase() === val.toLowerCase());
+                let existsSuffix = false;
+                if (val.length === 6 && /^\d{6}$/.test(val)) {
+                    existsSuffix = transactions.some(t => t.refNum.endsWith(val));
+                }
+
+                if (existsExact) {
+                    isDuplicate = true; refNumError.textContent = "⚠️ Exact duplicate reference number!"; refNumError.classList.remove('hidden'); refNumInput.classList.add('input-error'); saveBtn.disabled = true;
+                } else if (existsSuffix) {
+                    isDuplicate = true; refNumError.textContent = "⚠️ Matches the last 6 digits of an existing 13-digit Ref No.!"; refNumError.classList.remove('hidden'); refNumInput.classList.add('input-error'); saveBtn.disabled = true;
                 } else {
-                    refNumError.classList.add('hidden');
-                    refNumInput.classList.remove('input-error');
-                    saveBtn.disabled = false;
-                    isDuplicate = false;
+                    isDuplicate = false; refNumError.classList.add('hidden'); refNumInput.classList.remove('input-error'); saveBtn.disabled = false;
                 }
             });
             
             document.getElementById('transactionForm').addEventListener('submit', (e) => {
                 e.preventDefault();
-                if (isDuplicate) { showToast("⚠️ Duplicate Reference Number!"); return; }
-
+                if (isDuplicate) { showToast("⚠️ Cannot save: Duplicate Reference Number!"); return; }
                 const overlay = document.getElementById('loadingOverlay');
+                document.getElementById('loadingText').textContent = 'Saving transaction...';
                 overlay.classList.remove('hidden');
-
                 setTimeout(() => {
                     const refNum = refNumInput.value.trim();
                     const amount = parseFloat(document.getElementById('amount').value);
                     const date = document.getElementById('transDate').value;
                     const fee = calculateFee();
-
                     transactions.unshift({ id: Date.now(), refNum, amount, fee, date, timestamp: new Date().toISOString() });
                     localStorage.setItem('ck_transactions', JSON.stringify(transactions));
                     overlay.classList.add('hidden');
-                    
                     showToast("✅ Successfully recorded!");
                     clearForm();
                     document.getElementById('amount').focus();
@@ -315,62 +346,71 @@
             });
             
             document.getElementById('clearBtn').addEventListener('click', clearForm);
-            
             document.getElementById('saveFeeBtn').addEventListener('click', () => {
                 const newFee = parseFloat(document.getElementById('feePercentage').value);
-                if (newFee > 0) {
-                    feePercentage = newFee;
-                    localStorage.setItem('ck_feePercentage', feePercentage);
-                    document.getElementById('feePercentLabel').textContent = feePercentage;
-                    calculateFee();
-                    showToast("✅ Fee setting saved!");
-                }
+                if (newFee > 0) { feePercentage = newFee; localStorage.setItem('ck_feePercentage', feePercentage); document.getElementById('feePercentLabel').textContent = feePercentage; calculateFee(); showToast("✅ Fee setting saved!"); }
             });
-            
             document.getElementById('exportJsonBtn').addEventListener('click', exportToJSON);
             document.getElementById('exportExcelBtn').addEventListener('click', exportToCSV);
-            
-            document.getElementById('restoreFile').addEventListener('change', (e) => {
-                if (e.target.files[0]) { restoreBackup(e.target.files[0]); e.target.value = ''; }
-            });
+            document.getElementById('restoreFile').addEventListener('change', (e) => { if (e.target.files[0]) { restoreBackup(e.target.files[0]); e.target.value = ''; } });
 
-            // --- CLEAR ALL DATA MODAL LOGIC ---
+            // Clear All Modal
             const clearAllModal = document.getElementById('clearAllModal');
             const confirmInput = document.getElementById('confirmInput');
             const proceedClearBtn = document.getElementById('proceedClearBtn');
-            const cancelClearBtn = document.getElementById('cancelClearBtn');
-            const clearAllBtn = document.getElementById('clearAllBtn');
-
-            clearAllBtn.addEventListener('click', () => {
-                clearAllModal.classList.remove('hidden');
-                confirmInput.value = '';
-                proceedClearBtn.disabled = true;
-                setTimeout(() => confirmInput.focus(), 100);
-            });
-
-            cancelClearBtn.addEventListener('click', () => {
-                clearAllModal.classList.add('hidden');
-            });
-
-            confirmInput.addEventListener('input', (e) => {
-                // Force uppercase visually and check strictly
-                e.target.value = e.target.value.toUpperCase();
-                if (e.target.value === 'CONFIRM') {
-                    proceedClearBtn.disabled = false;
-                } else {
-                    proceedClearBtn.disabled = true;
-                }
-            });
-
+            document.getElementById('clearAllBtn').addEventListener('click', () => { clearAllModal.classList.remove('hidden'); confirmInput.value = ''; proceedClearBtn.disabled = true; setTimeout(() => confirmInput.focus(), 100); });
+            document.getElementById('cancelClearBtn').addEventListener('click', () => { clearAllModal.classList.add('hidden'); });
+            confirmInput.addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase(); proceedClearBtn.disabled = e.target.value !== 'CONFIRM'; });
             proceedClearBtn.addEventListener('click', () => {
-                if (confirmInput.value === 'CONFIRM') {
-                    transactions = [];
-                    localStorage.removeItem('ck_transactions');
-                    clearAllModal.classList.add('hidden');
-                    currentPage = 1;
-                    renderAll();
-                    showToast("✅ All data cleared successfully!");
-                }
+                if (confirmInput.value === 'CONFIRM') { transactions = []; localStorage.removeItem('ck_transactions'); clearAllModal.classList.add('hidden'); currentPage = 1; renderAll(); showToast("✅ All data cleared successfully!"); }
+            });
+
+            // --- WHATSAPP ASSISTANT LOGIC ---
+            const aiFab = document.getElementById('aiFab');
+            const aiModal = document.getElementById('aiAssistantModal');
+            const closeAiModal = document.getElementById('closeAiModal');
+            const sendFeedbackBtn = document.getElementById('sendFeedbackBtn');
+            const feedbackInput = document.getElementById('aiFeedbackInput');
+            const chatContainer = document.getElementById('chatContainer');
+
+            aiFab.addEventListener('click', () => {
+                aiModal.classList.remove('hidden');
+                setTimeout(() => feedbackInput.focus(), 300);
+            });
+
+            closeAiModal.addEventListener('click', () => aiModal.classList.add('hidden'));
+
+            sendFeedbackBtn.addEventListener('click', () => {
+                const text = feedbackInput.value.trim();
+                if (!text) return;
+
+                // Add User Bubble
+                const userBubble = document.createElement('div');
+                userBubble.className = 'chat-bubble user-bubble';
+                userBubble.textContent = text;
+                chatContainer.appendChild(userBubble);
+
+                feedbackInput.value = '';
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                sendFeedbackBtn.disabled = true;
+
+                // Simulate AI typing and open WhatsApp
+                setTimeout(() => {
+                    const aiBubble = document.createElement('div');
+                    aiBubble.className = 'chat-bubble ai-bubble';
+                    aiBubble.innerHTML = "🚀 Opening WhatsApp to send your message directly to the developer...";
+                    chatContainer.appendChild(aiBubble);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                    // Construct WhatsApp URL
+                    const fullMessage = `Hi Cashout Kita Developer! Here is my feedback/suggestion:\n\n${text}`;
+                    const whatsappUrl = `https://wa.me/${DEV_WHATSAPP_NUMBER}?text=${encodeURIComponent(fullMessage)}`;
+                    
+                    // Open WhatsApp
+                    window.open(whatsappUrl, '_blank');
+                    
+                    sendFeedbackBtn.disabled = false;
+                }, 800);
             });
             
             renderAll();
@@ -418,11 +458,7 @@
         function renderHistory() {
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = '';
-            if (transactions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No transactions yet.</td></tr>';
-                updatePaginationControls(0);
-                return;
-            }
+            if (transactions.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No transactions yet.</td></tr>'; updatePaginationControls(0); return; }
             const totalPages = Math.ceil(transactions.length / rowsPerPage);
             if (currentPage > totalPages) currentPage = totalPages;
             const startIndex = (currentPage - 1) * rowsPerPage;
@@ -432,13 +468,7 @@
             paginatedTxns.forEach(t => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b";
-                tr.innerHTML = `
-                    <td class="p-2 text-xs">${t.date}<br><span class="text-gray-400">${new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></td>
-                    <td class="p-2 font-medium">${t.refNum}</td>
-                    <td class="p-2 text-green-600">₱${t.amount.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                    <td class="p-2 text-orange-600">₱${t.fee.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                    <td class="p-2"><button onclick="deleteTransaction(${t.id})" class="text-red-500 text-xs font-bold">Delete</button></td>
-                `;
+                tr.innerHTML = `<td class="p-2 text-xs">${t.date}<br><span class="text-gray-400">${new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></td><td class="p-2 font-medium">${t.refNum}</td><td class="p-2 text-green-600">₱${t.amount.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td><td class="p-2 text-orange-600">₱${t.fee.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td><td class="p-2"><button onclick="deleteTransaction(${t.id})" class="text-red-500 text-xs font-bold">Delete</button></td>`;
                 tbody.appendChild(tr);
             });
             updatePaginationControls(totalPages);
@@ -453,19 +483,9 @@
         function setReportPeriod(period) {
             const customDiv = document.getElementById('customDateRange');
             const today = new Date().toISOString().split('T')[0];
-            if (period === 'today') {
-                customDiv.classList.add('hidden');
-                document.getElementById('reportFrom').value = today;
-                document.getElementById('reportTo').value = today;
-            } else if (period === 'month') {
-                customDiv.classList.add('hidden');
-                const firstDay = today.substring(0, 8) + '01';
-                document.getElementById('reportFrom').value = firstDay;
-                document.getElementById('reportTo').value = today;
-            } else {
-                customDiv.classList.remove('hidden');
-                return;
-            }
+            if (period === 'today') { customDiv.classList.add('hidden'); document.getElementById('reportFrom').value = today; document.getElementById('reportTo').value = today; } 
+            else if (period === 'month') { customDiv.classList.add('hidden'); const firstDay = today.substring(0, 8) + '01'; document.getElementById('reportFrom').value = firstDay; document.getElementById('reportTo').value = today; } 
+            else { customDiv.classList.remove('hidden'); return; }
             generateReport();
         }
 
@@ -484,9 +504,7 @@
             const dataStr = JSON.stringify(transactions, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'cashout-kita-backup-' + new Date().toISOString().split('T')[0] + '.json';
-            a.style.display = 'none'; document.body.appendChild(a); a.click();
+            const a = document.createElement('a'); a.href = url; a.download = 'cashout-kita-backup-' + new Date().toISOString().split('T')[0] + '.json'; a.style.display = 'none'; document.body.appendChild(a); a.click();
             setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
             showToast("✅ JSON Backup exported!");
         }
@@ -494,17 +512,10 @@
         function exportToCSV() {
             if (transactions.length === 0) { showToast("Walang data i-export."); return; }
             let csvContent = "Date,Time,Reference Number,Cash-out Amount,Fee\n";
-            transactions.forEach(t => {
-                const date = t.date;
-                const time = new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                const ref = `"${t.refNum.replace(/"/g, '""')}"`; 
-                csvContent += `${date},${time},${ref},${t.amount},${t.fee}\n`;
-            });
+            transactions.forEach(t => { const date = t.date; const time = new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); const ref = `"${t.refNum.replace(/"/g, '""')}"`; csvContent += `${date},${time},${ref},${t.amount},${t.fee}\n`; });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'cashout-kita-report-' + new Date().toISOString().split('T')[0] + '.csv';
-            a.style.display = 'none'; document.body.appendChild(a); a.click();
+            const a = document.createElement('a'); a.href = url; a.download = 'cashout-kita-report-' + new Date().toISOString().split('T')[0] + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click();
             setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
             showToast("✅ Excel (CSV) exported!");
         }
@@ -518,9 +529,7 @@
                         transactions = [...data, ...transactions];
                         transactions = transactions.filter((v,i,a) => a.findIndex(t => t.id === v.id) === i);
                         localStorage.setItem('ck_transactions', JSON.stringify(transactions));
-                        currentPage = 1;
-                        renderAll();
-                        showToast("✅ Backup restored!");
+                        currentPage = 1; renderAll(); showToast("✅ Backup restored!");
                     }
                 } catch (err) { alert("Error: " + err.message); }
             };
